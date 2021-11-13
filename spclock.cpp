@@ -1,142 +1,107 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <time.h>
+#include "spclock.hpp"
 
-#include <fcntl.h>
-#include <termios.h>
-#include <sys/types.h>
+bool SimpleClock::time_equal() {
+	return this->time_cur.h  == this->time_prev.h
+		&&   this->time_cur.m  == this->time_prev.m
+		&&   this->time_cur.s  == this->time_prev.s
+		&&   this->time_cur.am == this->time_prev.am;
+}
 
-#define up(x)     printf("\e[%dA", (x))
-#define down(x)   printf("\e[%dB", (x))
-#define right(x)  printf("\e[%dC", (x))
-#define left(x)   printf("\e[%dD", (x))
-#define move(x,y) printf("\e[%d;%dH", (y+1), (x+1))
-#define clear()   printf("\e[H\e[2J\e[3J")
-#define curoff()  printf("\e[?25l")
-#define curon()   printf("\e[?25h");
-#define color(x)  printf("\e[%d;1m", (x+30))
+SimpleClock::SimpleClock() {
+	this->running = true;
+	this->force_draw = true;
+}
 
-#define WIN_W 51
-#define WIN_H 7
-#define OFFSET_X 0
-#define OFFSET_Y 0
-#define OFFSET_DATE_X -2
-#define OFFSET_DATE_Y 0
-
-const bool number[][15] = {
-	{1,1,1,1,0,1,1,0,1,1,0,1,1,1,1}, /* 0 */
-	{0,0,1,0,0,1,0,0,1,0,0,1,0,0,1}, /* 1 */
-	{1,1,1,0,0,1,1,1,1,1,0,0,1,1,1}, /* 2 */
-	{1,1,1,0,0,1,1,1,1,0,0,1,1,1,1}, /* 3 */
-	{1,0,1,1,0,1,1,1,1,0,0,1,0,0,1}, /* 4 */
-	{1,1,1,1,0,0,1,1,1,0,0,1,1,1,1}, /* 5 */
-	{1,1,1,1,0,0,1,1,1,1,0,1,1,1,1}, /* 6 */
-	{1,1,1,0,0,1,0,0,1,0,0,1,0,0,1}, /* 7 */
-	{1,1,1,1,0,1,1,1,1,1,0,1,1,1,1}, /* 8 */
-	{1,1,1,1,0,1,1,1,1,0,0,1,1,1,1}, /* 9 */
-};
-
-void draw_number(int n, int x = 0, int y = 0) {
+void SimpleClock::draw_number(int n, int x, int y) {
 	for (int i = 0; i < 15; ++i) {
 		if (i % 3 == 0)	move(x, y + i/3);
 		if (number[n][i]) printf("██");
 		else printf("  ");
 	}
 };
-void draw_colon(bool draw, int x = 0, int y = 0) {
+void SimpleClock::draw_colon(bool draw, int x, int y) {
 	move(x, y + 1);
 	if (draw) printf("██"); else printf("  ");
 	move(x, y + 3);
 	if (draw) printf("██"); else printf("  ");
 }
-
-struct winsize w;
-class sp_time {
-public:
-	sp_time() { h = -1; m = -1; s = -1; am = 0; }
-	int h, m, s;
-	bool am;
-	bool operator==(sp_time &t) {
-		return this->h == t.h && this->m == t.m &&
-			this->s == t.s && this->am == t.am;
-	}
-} time_prev;
-int term_w_prev = -1, term_h_prev;
-int x, y;
-bool running = 1;
-
-void draw_clock(sp_time t, char *date, int x = 0, int y = 0) {
-	// Offset
-
-	x += OFFSET_X;
-	y += OFFSET_Y;
+void SimpleClock::draw_clock() {
 
 	// Draw big numbers
-	bool colon = t.s % 2 == 0;
+	bool colon = this->time_cur.s % 2 == 0;
 	draw_colon(colon, x + 15, y);
 	draw_colon(colon, x + 34, y);
-	draw_number(t.h / 10, x,     y);
-	draw_number(t.h % 10, x + 7, y);
-	draw_number(t.m / 10, x + 19, y);
-	draw_number(t.m % 10, x + 26, y);
-	draw_number(t.s / 10, x + 38, y);
-	draw_number(t.s % 10, x + 45, y);
+	draw_number(this->time_cur.h / 10, x,     y);
+	draw_number(this->time_cur.h % 10, x + 7, y);
+	draw_number(this->time_cur.m / 10, x + 19, y);
+	draw_number(this->time_cur.m % 10, x + 26, y);
+	draw_number(this->time_cur.s / 10, x + 38, y);
+	draw_number(this->time_cur.s % 10, x + 45, y);
 
 	// Draw date
-	int len = sizeof(date) / sizeof(date[0]);
+	int len = sizeof(this->datestr) / sizeof(this->datestr[0]);
 	move(x + (WIN_W - len) / 2 + OFFSET_DATE_X, y + 6 + OFFSET_DATE_Y);
-	printf("%s", date);
+	printf("%s", this->datestr);
 
 	// Flush buffer
 	fflush(stdout);
 }
 
-void display_clock() {
+void SimpleClock::update_time() {
 	// Aquire time info
 	time_t lt = time(NULL);
-	struct tm *tm;
 	tm = localtime(&(lt));
-	sp_time time;
-	time.h  = tm->tm_hour;
-	time.am = time.h < 12;
-	time.h %= 12;
-	if (!time.h) time.h = 12;
-	time.m  = tm->tm_min;
-	time.s  = tm->tm_sec;
-
+	this->time_cur.h = tm->tm_hour;
+	this->time_cur.am = time_cur.h < 12;
+	this->time_cur.h %= 12;
+	if (!this->time_cur.h) this->time_cur.h = 12;
+	this->time_cur.m = tm->tm_min;
+	this->time_cur.s = tm->tm_sec;
+}
+void SimpleClock::update_date() {
+	memset(this->datestr, 0, sizeof(this->datestr));
+	char tmpstr[16];
+	strftime(tmpstr, sizeof(tmpstr), "%Y/%m/%d", tm);
+	sprintf(this->datestr, "%s%s", tmpstr, this->time_cur.am? " AM" : " PM");
+}
+void SimpleClock::update_terminfo() {
 	// Aquire terminal info
 	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-	int term_w = w.ws_col, term_h = w.ws_row;
-	if (term_w < WIN_W || term_h < WIN_H) {
+	this->term_w = w.ws_col; this->term_h = w.ws_row;
+	if (this->term_w < WIN_W || this->term_h < WIN_H) {
 		// Terminal is too small to draw
-		exit(1);
+		this->running = false;
 	}
-	if (term_w != term_w_prev || term_h != term_h_prev || term_w_prev < 0) {
+	if ( this->term_w != this->term_w_prev
+		|| this->term_h != this->term_h_prev
+		|| this->force_draw) {
 		// Terminal size changes or initializtion
 		clear();
-		x = (term_w - WIN_W) / 2;
-		y = (term_h - WIN_H) / 2;
-	} else if (time == time_prev) {
-		return;
+		this->x = (this->term_w - WIN_W) / 2;
+		this->y = (this->term_h - WIN_H) / 2;
+		this->force_draw = true;
 	}
-
-	char tmpstr[16], datestr[16];
-	strftime(tmpstr, sizeof(tmpstr), "%Y/%m/%d", tm);
-	sprintf(datestr, "%s%s", tmpstr, time.am? " AM" : " PM");
-	draw_clock(time, datestr, x, y);
-
+}
+void SimpleClock::update_history() {
 	// Save previous info
-	time_prev = time;
-	term_w_prev = term_w;
-	term_h_prev = term_h;
+	this->time_prev   = this->time_cur;
+	this->term_w_prev = this->term_w;
+	this->term_h_prev = this->term_h;
 }
 
-struct termios settings_old, settings;
-void key_event() {
+void SimpleClock::update() {
+	this->update_time();
+	this->update_terminfo();
+	if (!this->force_draw && this->time_equal()) return;
+	this->update_date();
+	this->update_history();
+}
+void SimpleClock::draw() {
+	this->draw_clock();
+	this->force_draw = false;
+}
+
+void SimpleClock::key_event() {
 	tcgetattr(fileno( stdin ), &settings_old);
 	settings = settings_old;
 	settings.c_lflag &= (~ICANON & ~ECHO);
@@ -174,12 +139,13 @@ void key_event() {
 	}
 }
 
-int main() {
+void SimpleClock::run() {
 	curoff();
 	color(6);
 	while (running) {
-		display_clock();
-		key_event();
+		this->update();
+		this->draw();
+		this->key_event();
 	}
 	curon();
 	clear();
