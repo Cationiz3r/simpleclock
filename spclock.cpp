@@ -16,6 +16,8 @@ void SimpleClock::draw_colon(bool draw, int x, int y) {
 	move(x, y + 3); printf(draw? "██": "  ");
 }
 void SimpleClock::draw_clock() {
+	int x = (term[0] - WIN_W) / 2;
+  int y = (term[1] - WIN_H) / 2;
 	// Draw big numbers
 	bool colon = !(t[2] % 2);
 	draw_colon(colon, x + 15, y);
@@ -53,26 +55,21 @@ void SimpleClock::update_terminfo() {
 
 	// Aquire terminal info
 	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-	term_w = w.ws_col; term_h = w.ws_row;
-	if (term_w < WIN_W || term_h < WIN_H) {
+	term = {w.ws_col, w.ws_row};
+	if (term[0] < WIN_W || term[1] < WIN_H) {
 		// Terminal is too small to draw
 		running = false;
 	}
-	if ( term_w != term_w_prev
-		|| term_h != term_h_prev
-		|| force_draw) {
+	if (!(term == termp) || force_draw) {
 		// Terminal size changes or initializtion
 		clear();
-		x = (term_w - WIN_W) / 2;
-		y = (term_h - WIN_H) / 2;
 		force_draw = true;
 	}
 }
 void SimpleClock::update_history() {
 	// Save previous info
-	tp          = t;
-	term_w_prev = term_w;
-	term_h_prev = term_h;
+	tp    = t;
+	termp = term;
 }
 
 void SimpleClock::update() {

@@ -46,9 +46,7 @@ const bool number[][15] = {
 class SimpleClock {
 private:
 	std::array<int, 3> t, tp; //{h, m, s}
-	int term_w, term_h;
-	int term_w_prev, term_h_prev;
-	int x, y;
+	std::array<int, 2> term, termp;
 	bool running, force_draw;
 	char datestr[20];
 	struct tm *tm;
