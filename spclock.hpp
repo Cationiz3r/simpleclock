@@ -43,8 +43,6 @@ const bool number[][15] = {
 
 class SimpleClock {
 private:
-	struct winsize w;
-	struct termios settings_old, settings;
 	struct SimpleTime {
 		int h, m, s;
 	} time_cur, time_prev;

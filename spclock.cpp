@@ -25,7 +25,6 @@ void SimpleClock::draw_colon(bool draw, int x, int y) {
 	if (draw) printf("██"); else printf("  ");
 }
 void SimpleClock::draw_clock() {
-
 	// Draw big numbers
 	bool colon = !(this->time_cur.s % 2);
 	draw_colon(colon, x + 15, y);
@@ -61,6 +60,8 @@ void SimpleClock::update_date() {
 	sprintf(this->datestr, "%s", tmpstr);
 }
 void SimpleClock::update_terminfo() {
+	struct winsize w;
+
 	// Aquire terminal info
 	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 	this->term_w = w.ws_col; this->term_h = w.ws_row;
@@ -98,6 +99,8 @@ void SimpleClock::draw() {
 }
 
 void SimpleClock::key_event() {
+	struct termios settings_old, settings;
+
 	tcgetattr(fileno( stdin ), &settings_old);
 	settings = settings_old;
 	settings.c_lflag &= (~ICANON & ~ECHO);
