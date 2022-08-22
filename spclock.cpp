@@ -1,9 +1,7 @@
 #include "spclock.hpp"
 
 bool SimpleClock::time_equal() {
-	return this->time_cur.h  == this->time_prev.h &&
-		     this->time_cur.m  == this->time_prev.m &&
-		     this->time_cur.s  == this->time_prev.s;
+	return t == tp;
 }
 
 SimpleClock::SimpleClock() {
@@ -26,15 +24,15 @@ void SimpleClock::draw_colon(bool draw, int x, int y) {
 }
 void SimpleClock::draw_clock() {
 	// Draw big numbers
-	bool colon = !(this->time_cur.s % 2);
+	bool colon = !(this->t[2] % 2);
 	draw_colon(colon, x + 15, y);
 	draw_colon(colon, x + 34, y);
-	draw_number(this->time_cur.h / 10, x,      y);
-	draw_number(this->time_cur.h % 10, x + 7,  y);
-	draw_number(this->time_cur.m / 10, x + 19, y);
-	draw_number(this->time_cur.m % 10, x + 26, y);
-	draw_number(this->time_cur.s / 10, x + 38, y);
-	draw_number(this->time_cur.s % 10, x + 45, y);
+	draw_number(t[0] / 10, x,      y);
+	draw_number(t[0] % 10, x + 7,  y);
+	draw_number(t[1] / 10, x + 19, y);
+	draw_number(t[1] % 10, x + 26, y);
+	draw_number(t[2] / 10, x + 38, y);
+	draw_number(t[2] % 10, x + 45, y);
 
 	// Draw date
 	int len = sizeof(this->datestr) / sizeof(this->datestr[0]);
@@ -49,9 +47,7 @@ void SimpleClock::update_time() {
 	// Aquire time info
 	time_t lt = time(NULL);
 	tm = localtime(&(lt));
-	this->time_cur.h = tm->tm_hour;
-	this->time_cur.m = tm->tm_min;
-	this->time_cur.s = tm->tm_sec;
+	t = {tm->tm_hour, tm->tm_min, tm->tm_sec};
 }
 void SimpleClock::update_date() {
 	memset(this->datestr, 0, sizeof(this->datestr));
@@ -81,9 +77,9 @@ void SimpleClock::update_terminfo() {
 }
 void SimpleClock::update_history() {
 	// Save previous info
-	this->time_prev   = this->time_cur;
-	this->term_w_prev = this->term_w;
-	this->term_h_prev = this->term_h;
+	tp          = t;
+	term_w_prev = term_w;
+	term_h_prev = term_h;
 }
 
 void SimpleClock::update() {

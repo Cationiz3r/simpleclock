@@ -13,6 +13,8 @@
 #include <termios.h>
 #include <sys/types.h>
 
+#include <array>
+
 #define up(x)     printf("\e[%dA", (x))
 #define down(x)   printf("\e[%dB", (x))
 #define right(x)  printf("\e[%dC", (x))
@@ -43,9 +45,7 @@ const bool number[][15] = {
 
 class SimpleClock {
 private:
-	struct SimpleTime {
-		int h, m, s;
-	} time_cur, time_prev;
+	std::array<int, 3> t, tp; //{h, m, s}
 	int term_w, term_h;
 	int term_w_prev, term_h_prev;
 	int x, y;
