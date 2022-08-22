@@ -25,7 +25,7 @@
 
 #define WIN_W 51
 #define WIN_H 7
-#define OFFSET_DATE_X 4
+#define OFFSET_DATE_X 6
 #define OFFSET_DATE_Y 0
 
 const bool number[][15] = {
@@ -47,7 +47,6 @@ private:
 	struct termios settings_old, settings;
 	struct SimpleTime {
 		int h, m, s;
-		bool am;
 	} time_cur, time_prev;
 	int term_w, term_h;
 	int term_w_prev, term_h_prev;

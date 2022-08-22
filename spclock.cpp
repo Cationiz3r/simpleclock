@@ -1,10 +1,9 @@
 #include "spclock.hpp"
 
 bool SimpleClock::time_equal() {
-	return this->time_cur.h  == this->time_prev.h
-		&&   this->time_cur.m  == this->time_prev.m
-		&&   this->time_cur.s  == this->time_prev.s
-		&&   this->time_cur.am == this->time_prev.am;
+	return this->time_cur.h  == this->time_prev.h &&
+		     this->time_cur.m  == this->time_prev.m &&
+		     this->time_cur.s  == this->time_prev.s;
 }
 
 SimpleClock::SimpleClock() {
@@ -28,11 +27,11 @@ void SimpleClock::draw_colon(bool draw, int x, int y) {
 void SimpleClock::draw_clock() {
 
 	// Draw big numbers
-	bool colon = this->time_cur.s % 2 == 0;
+	bool colon = !(this->time_cur.s % 2);
 	draw_colon(colon, x + 15, y);
 	draw_colon(colon, x + 34, y);
-	draw_number(this->time_cur.h / 10, x,     y);
-	draw_number(this->time_cur.h % 10, x + 7, y);
+	draw_number(this->time_cur.h / 10, x,      y);
+	draw_number(this->time_cur.h % 10, x + 7,  y);
 	draw_number(this->time_cur.m / 10, x + 19, y);
 	draw_number(this->time_cur.m % 10, x + 26, y);
 	draw_number(this->time_cur.s / 10, x + 38, y);
@@ -52,9 +51,6 @@ void SimpleClock::update_time() {
 	time_t lt = time(NULL);
 	tm = localtime(&(lt));
 	this->time_cur.h = tm->tm_hour;
-	this->time_cur.am = time_cur.h < 12;
-	this->time_cur.h %= 12;
-	if (!this->time_cur.h) this->time_cur.h = 12;
 	this->time_cur.m = tm->tm_min;
 	this->time_cur.s = tm->tm_sec;
 }
@@ -62,7 +58,7 @@ void SimpleClock::update_date() {
 	memset(this->datestr, 0, sizeof(this->datestr));
 	char tmpstr[16];
 	strftime(tmpstr, sizeof(tmpstr), "%Y/%m/%d", tm);
-	sprintf(this->datestr, "%s%s", tmpstr, this->time_cur.am? " AM" : " PM");
+	sprintf(this->datestr, "%s", tmpstr);
 }
 void SimpleClock::update_terminfo() {
 	// Aquire terminal info
