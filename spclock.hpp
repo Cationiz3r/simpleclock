@@ -51,7 +51,6 @@ private:
 	int x, y;
 	bool running, force_draw;
 	char datestr[20];
-	bool time_equal();
 	struct tm *tm;
 public:
 	SimpleClock();

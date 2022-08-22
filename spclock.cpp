@@ -1,9 +1,5 @@
 #include "spclock.hpp"
 
-bool SimpleClock::time_equal() {
-	return t == tp;
-}
-
 SimpleClock::SimpleClock() {
 	this->running = true;
 	this->force_draw = true;
@@ -12,15 +8,12 @@ SimpleClock::SimpleClock() {
 void SimpleClock::draw_number(int n, int x, int y) {
 	for (int i = 0; i < 15; ++i) {
 		if (i % 3 == 0)	move(x, y + i/3);
-		if (number[n][i]) printf("██");
-		else printf("  ");
+		printf(number[n][i]? "██" : "  ");
 	}
 };
 void SimpleClock::draw_colon(bool draw, int x, int y) {
-	move(x, y + 1);
-	if (draw) printf("██"); else printf("  ");
-	move(x, y + 3);
-	if (draw) printf("██"); else printf("  ");
+	move(x, y + 1); printf(draw? "██": "  ");
+	move(x, y + 3); printf(draw? "██": "  ");
 }
 void SimpleClock::draw_clock() {
 	// Draw big numbers
@@ -85,7 +78,7 @@ void SimpleClock::update_history() {
 void SimpleClock::update() {
 	this->update_time();
 	this->update_terminfo();
-	if (!this->force_draw && this->time_equal()) return;
+	if (!force_draw && t == tp) return;
 	this->update_date();
 	this->update_history();
 }
