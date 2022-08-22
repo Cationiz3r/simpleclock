@@ -1,8 +1,8 @@
 #include "spclock.hpp"
 
 SimpleClock::SimpleClock() {
-	this->running = true;
-	this->force_draw = true;
+	running = true;
+	force_draw = true;
 }
 
 void SimpleClock::draw_number(int n, int x, int y) {
@@ -17,7 +17,7 @@ void SimpleClock::draw_colon(bool draw, int x, int y) {
 }
 void SimpleClock::draw_clock() {
 	// Draw big numbers
-	bool colon = !(this->t[2] % 2);
+	bool colon = !(t[2] % 2);
 	draw_colon(colon, x + 15, y);
 	draw_colon(colon, x + 34, y);
 	draw_number(t[0] / 10, x,      y);
@@ -28,9 +28,9 @@ void SimpleClock::draw_clock() {
 	draw_number(t[2] % 10, x + 45, y);
 
 	// Draw date
-	int len = sizeof(this->datestr) / sizeof(this->datestr[0]);
+	int len = sizeof(datestr) / sizeof(datestr[0]);
 	move(x + (WIN_W - len) / 2 + OFFSET_DATE_X, y + 6 + OFFSET_DATE_Y);
-	printf("%s", this->datestr);
+	printf("%s", datestr);
 
 	// Flush buffer
 	fflush(stdout);
@@ -43,29 +43,29 @@ void SimpleClock::update_time() {
 	t = {tm->tm_hour, tm->tm_min, tm->tm_sec};
 }
 void SimpleClock::update_date() {
-	memset(this->datestr, 0, sizeof(this->datestr));
+	memset(datestr, 0, sizeof(datestr));
 	char tmpstr[16];
 	strftime(tmpstr, sizeof(tmpstr), "%Y/%m/%d", tm);
-	sprintf(this->datestr, "%s", tmpstr);
+	sprintf(datestr, "%s", tmpstr);
 }
 void SimpleClock::update_terminfo() {
 	struct winsize w;
 
 	// Aquire terminal info
 	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-	this->term_w = w.ws_col; this->term_h = w.ws_row;
-	if (this->term_w < WIN_W || this->term_h < WIN_H) {
+	term_w = w.ws_col; term_h = w.ws_row;
+	if (term_w < WIN_W || term_h < WIN_H) {
 		// Terminal is too small to draw
-		this->running = false;
+		running = false;
 	}
-	if ( this->term_w != this->term_w_prev
-		|| this->term_h != this->term_h_prev
-		|| this->force_draw) {
+	if ( term_w != term_w_prev
+		|| term_h != term_h_prev
+		|| force_draw) {
 		// Terminal size changes or initializtion
 		clear();
-		this->x = (this->term_w - WIN_W) / 2;
-		this->y = (this->term_h - WIN_H) / 2;
-		this->force_draw = true;
+		x = (term_w - WIN_W) / 2;
+		y = (term_h - WIN_H) / 2;
+		force_draw = true;
 	}
 }
 void SimpleClock::update_history() {
@@ -76,15 +76,15 @@ void SimpleClock::update_history() {
 }
 
 void SimpleClock::update() {
-	this->update_time();
-	this->update_terminfo();
+	update_time();
+	update_terminfo();
 	if (!force_draw && t == tp) return;
-	this->update_date();
-	this->update_history();
+	update_date();
+	update_history();
 }
 void SimpleClock::draw() {
-	this->draw_clock();
-	this->force_draw = false;
+	draw_clock();
+	force_draw = false;
 }
 
 void SimpleClock::key_event() {
@@ -131,9 +131,9 @@ void SimpleClock::run() {
 	curoff();
 	color(6);
 	while (running) {
-		this->update();
-		this->draw();
-		this->key_event();
+		update();
+		draw();
+		key_event();
 	}
 	curon();
 	clear();
