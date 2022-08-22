@@ -47,7 +47,7 @@ class SimpleClock {
 private:
 	std::array<int, 3> t, tp; //{h, m, s}
 	std::array<int, 2> term, termp;
-	bool running, force_draw;
+	bool running, skip;
 	char datestr[20];
 	struct tm *tm;
 public:

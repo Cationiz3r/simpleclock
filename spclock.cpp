@@ -2,7 +2,8 @@
 
 SimpleClock::SimpleClock() {
 	running = true;
-	force_draw = true;
+	skip = false;
+	termp = {-1, -1};
 }
 
 void SimpleClock::draw_number(int n, int x, int y) {
@@ -60,10 +61,10 @@ void SimpleClock::update_terminfo() {
 		// Terminal is too small to draw
 		running = false;
 	}
-	if (!(term == termp) || force_draw) {
-		// Terminal size changes or initializtion
+	if (!(term == termp)) {
+		// Terminal size changes
 		clear();
-		force_draw = true;
+		skip = false;
 	}
 }
 void SimpleClock::update_history() {
@@ -75,13 +76,15 @@ void SimpleClock::update_history() {
 void SimpleClock::update() {
 	update_time();
 	update_terminfo();
-	if (!force_draw && t == tp) return;
-	update_date();
+	if (!(t == tp)) {
+		skip = false;
+		update_date();
+	}
 	update_history();
 }
 void SimpleClock::draw() {
-	draw_clock();
-	force_draw = false;
+	if (!skip) draw_clock();
+	skip = true;
 }
 
 void SimpleClock::key_event() {
@@ -127,6 +130,7 @@ void SimpleClock::key_event() {
 void SimpleClock::run() {
 	curoff();
 	color(6);
+	clear();
 	while (running) {
 		update();
 		draw();
