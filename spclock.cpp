@@ -46,7 +46,7 @@ void SimpleClock::update_time() {
 	t = {tm->tm_hour, tm->tm_min, tm->tm_sec};
 }
 void SimpleClock::update_date() {
-	memset(datestr, 0, sizeof(datestr));
+	datestr[0] = 0;
 	char tmpstr[16];
 	strftime(tmpstr, sizeof(tmpstr), "%Y/%m/%d", tm);
 	sprintf(datestr, "%s", tmpstr);
